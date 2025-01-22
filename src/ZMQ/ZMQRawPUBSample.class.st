@@ -14,24 +14,30 @@ Class {
 { #category : #examples }
 ZMQRawPUBSample class >> example [
 
-	| url context publisher subscriber loremIpsum |
+	| url context publisher subscriber loremIpsum msgLength |
 	"'12345' asFileReference ensureCreateFile. "
 	"url := 'ipc://12345'."
 	"url := 'inproc://#1'."
-	url := 'tcp://127.0.0.1:31001'.
+	url := 'tcp://127.0.0.1:31002'.
+
+	msgLength := 5000.
+
+	"Set up"
 	context := ZMQContext new.
 	publisher := ZMQRawPUBSample url: url context: context.
 	subscriber := ZMQRawSUBSample url: url context: context.
+	publisher maxMessageSize: msgLength.
+	subscriber maxMessageSize: msgLength.
 
-	loremIpsum := String loremIpsum: 1400.
-	[|done|
-	publisher publish: loremIpsum.
-	done := false.
-	[ subscriber
+	loremIpsum := String loremIpsum: msgLength.
+	[	|done|
+		publisher publish: loremIpsum.
+		done := false.
+		[ subscriber
 			receiveIfPresent: [ :r | done := true ]
 			ifAbsent: [ Processor yield ]
 			] doWhileFalse: [ done ]
-	] bench traceCr.
+		] bench traceCr.
 
 	"tear down"
 	subscriber socket close.
